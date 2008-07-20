@@ -1,0 +1,9 @@
+Revision history for Perl extension Parallel::MapReduce.
+
+0.05  Sat Jul 19 21:44:10 CEST 2008
+	- first packaged version
+
+0.01  Fri Jul  4 20:16:11 2008
+	- original version; created by h2xs 1.23 with options
+		-n Parallel::MapReduce -X --compat-version=5.8.0
+
