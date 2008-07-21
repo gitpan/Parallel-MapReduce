@@ -9,6 +9,8 @@ our @EXPORT    = qw(Hchunk Hslice Hfetch Hstore chunk_n_store fetch_n_unchunk ba
 
 use Data::Dumper;
 use Storable qw(freeze thaw);
+$Storable::Deparse = 1;
+$Storable::Eval = 1;
 
 # chunking a hash %H into chunks of size L
 # size 'L' is more a rough estimate, than a hard limit

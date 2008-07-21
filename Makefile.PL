@@ -1,6 +1,9 @@
 use 5.008000;
 use ExtUtils::MakeMaker;
 
+use Config;
+$Config{useithreads} or die 'This Perl binary has been built without threads. But threads are needed here.';
+
 WriteMakefile(
 	      NAME              => 'Parallel::MapReduce',
 	      VERSION_FROM      => 'lib/Parallel/MapReduce.pm',
@@ -8,6 +11,7 @@ WriteMakefile(
 		  'Cache::Memcached' => 1.24,
 		  'IPC::Run'         => 0.80,
 		  'Test::More'       => 0.72,
+		  'Test::Pod'        => 1.26,
 	      },
 	      ABSTRACT_FROM  => 'lib/Parallel/MapReduce.pm',
 	      AUTHOR         => 'Robert Barta <drrho@cpan.org>',

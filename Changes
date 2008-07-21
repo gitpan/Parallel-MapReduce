@@ -1,5 +1,9 @@
 Revision history for Perl extension Parallel::MapReduce.
 
+0.06  Mon Jul 21 19:50:27 CEST 2008
+	- added Test::Pod dependency
+	- added guards not to run threaded code with unthreaded Perls
+
 0.05  Sat Jul 19 21:44:10 CEST 2008
 	- first packaged version
 

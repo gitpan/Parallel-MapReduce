@@ -16,6 +16,8 @@ use Storable;
 $Storable::Deparse = 1;
 $Storable::Eval = 1;
 
+our $VERSION  = '0.06';
+
 =pod
 
 =head1 NAME
@@ -79,7 +81,7 @@ data, but instead a pool of C<memcached> servers.
 
 =head1 DESCRIPTION
 
-In a nutshell, the MapReduce algorithm is this in sequential form):
+In a nutshell, the MapReduce algorithm is this (in sequential form):
 
    sub mapreduce {
        my $mri    = shift;
@@ -138,8 +140,6 @@ some work-arounds, but other options should be investigated.
 use Parallel::MapReduce::Worker;
 use Parallel::MapReduce::Worker::FakeRemote;
 use Parallel::MapReduce::Worker::SSH;
-
-our $VERSION  = '0.05';
 
 =pod
 
