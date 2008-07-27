@@ -16,7 +16,7 @@ use Storable;
 $Storable::Deparse = 1;
 $Storable::Eval = 1;
 
-our $VERSION  = '0.06';
+our $VERSION  = '0.07';
 
 =pod
 

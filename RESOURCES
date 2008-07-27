@@ -1,3 +1,72 @@
+  do so by shoving the keys into memcache, and a few implementations might 
+    work: 
+       1. One memcache key, all mappers do a get-update-put on the value, 
+       which is a list of keys 
+       2. One memcache key per mapper output key, an incrementing integer. 
+       Next integer to use is maintained in a special memcache key, and mappers 
+       request that next key every time they want to output a value. 
+ Doesn't solve 
+       duplicate keys, and sharding the reducers has to get into 
+ modulo-arithmetic 
+       (reducer 5 of 20 takes every (20x + 5)th key), and that kinda 
+ makes my head 
+       hurt. 
+       3. Variant of (1), but with each mapper getting its own key to which 
+       to write.  Better concurrency, but doesn't handle uniquness and 
+ would thus 
+       require a second pass. 
+
+
+
+
+t) const {
+    return NULL;
+  }
+
+  /**
+   * Create an application record reader.
+
+ * @return the new RecordReader or NULL, if the Java RecordReader should be
+   *    used.
+   */
+  virtual RecordReader* createRecordReader(MapContext& context) const {
+    return NULL;
+  }
+
+  /**
+   * Create an application record writer.
+
+ * @return the new RecordWriter or NULL, if the Java RecordWriter should be
+   *    used.
+   */
+
+ virtual RecordWriter* createRecordWriter(ReduceContext& context) const {
+    return NULL;
+  }
+
+  virtual ~Factory() {}
+};
+
+/**
+
+* Start the event handling loop that runs the task. This will use the given
+* factory to create Mappers and Reducers and so on.
+* @return true, if the task succeeded.
+*/
+bool runTask(const Factory& factory);
+
+}
+
+#endif
+
+
+
+
+
+
+http://groups.google.com/group/httpmr-discuss/files
+
+
 ----- Forwarded message from Robert Barta <rho@devc.at> -----
 
 Date: Sun, 6 Jul 2008 12:46:44 +0200

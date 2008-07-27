@@ -29,8 +29,8 @@ upload:
 dependencies:
 	perl support/dependencies.pl
 
-prepare_test:
-	export MR_ONLINE=1
+network_test:
+	export MR_ONLINE=1 ; make disttest ; export MR_ONLINE=0
 
 MAKE
 }

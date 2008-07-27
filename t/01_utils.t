@@ -8,6 +8,8 @@ use constant SERVERS => ['127.0.0.1:11211'];
 
 use Parallel::MapReduce::Utils;
 
+my $online = 1 if $ENV{MR_ONLINE};
+
 {
     my %H = (aaa => 'bbb', ccc => 'ddd', eee => 'fff', ggg => 'hhh');
 
@@ -69,7 +71,7 @@ sub _check {
 
 #-- chunked roundtrip over memcacheds
 
-{
+if ($online) {
     my $A = {1 => 'this is something ',
 	     2 => 'this is something else',
 	     3 => 'something else completely'};
