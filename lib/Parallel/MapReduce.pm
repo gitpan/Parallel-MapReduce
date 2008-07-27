@@ -14,9 +14,28 @@ use Cache::Memcached;
 
 use Storable;
 $Storable::Deparse = 1;
-$Storable::Eval = 1;
+$Storable::Eval    = 1;
 
-our $VERSION  = '0.07';
+our $VERSION  = '0.08';
+
+#-- logging infrastructure
+
+use Log::Log4perl;
+Log::Log4perl::init( \ q(
+
+#log4perl.rootLogger=DEBUG, Screen
+log4perl.rootLogger=INFO, Screen
+
+log4perl.appender.Screen=Log::Log4perl::Appender::Screen
+log4perl.appender.Screen.layout=Log::Log4perl::Layout::PatternLayout
+log4perl.appender.Screen.layout.ConversionPattern=[%r] %F %L %c - %m%n
+			 ) );
+
+our $log = _log();  # lets create a logger, should be used throughout
+
+sub _log {
+    return Log::Log4perl->get_logger("MR");
+}
 
 =pod
 
@@ -179,14 +198,14 @@ sub new {
     my $class = shift;
     my %opts  = @_;
     $opts{WorkerClass} ||= 'Parallel::MapReduce::Worker';                 # make sure we have something
-    die "no MemCached servers" unless $opts{MemCacheds} &&
-	                              @{ $opts{MemCacheds} };             # complain if there is nowhere to write data to
+    $log->logdie ("no MemCached servers") unless $opts{MemCacheds} &&
+	                                       @{ $opts{MemCacheds} };    # complain if there is nowhere to write data to
 
     my $self  = bless \%opts, $class;
     $self->{_workers} = [ map { $self->{WorkerClass}->new (host => $_) }  # start up all
 			  @{ $self->{Workers} }                           # workers
 			  ];
-    die "no operational workers" unless @{ $self->{_workers} };           # complain if there is no one doing any work
+    $log->logdie ("no operational workers") unless @{ $self->{_workers} };# complain if there is no one doing any work
     return $self;
 }
 
@@ -241,8 +260,9 @@ sub mapreduce {
     threads->create (sub { $memd->set ('map',    $map) })   ->join;          # store map into cloud (see $Storable::Deparse)
     threads->create (sub { $memd->set ('reduce', $reduce) })->join;          # store reduce into cloud (see $Storable::Deparse)
 
+  SLICING:
     my $slices = Hslice ($h1, scalar @{ $self->{_workers} });                # slice the hash into equal parts (as many workers as there are)
-warn "sliced ".Dumper $slices;
+    $log->debug ("master sliced ".Dumper $slices) if $log->is_debug;
 
     my @keys;                                                                # this will be filled in the map phase below
   MAPPHASE:
@@ -283,11 +303,10 @@ warn "sliced ".Dumper $slices;
 	sleep 1 if $sl4ws eq _slices ([ keys %$slices ], $self->{_workers});    # only if no progress , we are not yet finished?
     }
 
-warn "all keys after mappers ".Dumper \@keys;
+    $log->debug ("master: all keys after mappers ".Dumper \@keys) if $log->is_debug;
   RESHUFFLING:
     my $Rs = balance_keys (\@keys, $job, scalar @{ $self->{_workers} });     # slice the keys into 'equal' groups
-
-warn "after balancing ".Dumper $Rs;
+    $log->debug ("master: after balancing ".Dumper $Rs) if $log->is_debug;
 
     my @chunks;
   REDUCEPHASE:
@@ -329,10 +348,10 @@ warn "after balancing ".Dumper $Rs;
 #		       };
 #    }
 
-warn "trying to reconstruct from ".Dumper \@chunks;
+#warn "trying to reconstruct from ".Dumper \@chunks;
     my $h4 = threads->create ('fetch_n_unchunk', $memd, \@chunks)->join;
 ## fetch_n_unchunk ($memd, \@chunks);                             # collect together all these chunks
-warn "reconstructed result ".Dumper $h4;
+    $log->debug ("master: reconstructed result ".Dumper $h4) if $log->is_debug;
     return $h4;                                                              # return the result hash
 }
 

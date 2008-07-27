@@ -5,6 +5,8 @@ use warnings;
 
 use base 'Parallel::MapReduce';
 
+our $log;
+
 =pod
 
 =head1 NAME
@@ -38,6 +40,7 @@ sub mapreduce {
     my $reduce = shift;
     my $h1     = shift;
 
+    $log ||= $Parallel::MapReduce::log;                                 # just a local short, I hate typing
     my %h3;
     while (my ($k, $v) = each %$h1) {
 	my %h2 = &$map ($k => $v);
@@ -65,6 +68,6 @@ itself.
 
 =cut
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
 1;

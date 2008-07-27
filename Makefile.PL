@@ -12,6 +12,7 @@ WriteMakefile(
 		  'IPC::Run'         => 0.80,
 		  'Test::More'       => 0.72,
 		  'Test::Pod'        => 1.26,
+		  'Log::Log4perl'    => 1.16,
 	      },
 	      ABSTRACT_FROM  => 'lib/Parallel/MapReduce.pm',
 	      AUTHOR         => 'Robert Barta <drrho@cpan.org>',

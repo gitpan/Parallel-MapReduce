@@ -77,7 +77,6 @@ my $A = {1 => 'this is something ',
 			  'slice1:this',
 			  'slice1:something'
 			  ]), ref ($w).': map alone, return keys');
-
 	
 	my $ks = $w->reduce ($cs, SERVERS, $job);
 #warn Dumper $ks;

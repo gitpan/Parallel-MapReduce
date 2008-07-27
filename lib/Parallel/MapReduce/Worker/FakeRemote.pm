@@ -33,7 +33,7 @@ sub reduce {
     my $ks = shift;
     my $ss = shift;
     my $jj = shift;
-warn "master writes to reduce ".Dumper ($ks, $ss, $jj);
+#warn "master writes to reduce ".Dumper ($ks, $ss, $jj);
     $comm = [ $ks, $ss, $jj ];
     fake_remoted_reduce();
     return $comm;
@@ -47,5 +47,6 @@ sub fake_remoted_reduce {
     $comm = $cs;
 }
 
+our $VERSION = 0.03;
 
 1;

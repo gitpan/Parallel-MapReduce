@@ -8,6 +8,8 @@ use Data::Dumper;
 use Cache::Memcached;
 use Parallel::MapReduce::Utils;
 
+our $log;
+
 =pod
 
 =head1 NAME
@@ -39,24 +41,26 @@ sub mapreduce {
     my $h1     = shift;                                                      # the incoming hash
     my $job    = shift || 'job1:';                                           # a job id (should be different for every job)
 
+    $log ||= $Parallel::MapReduce::log;
+
     my $memd = new Cache::Memcached {'servers' => $self->{MemCacheds}, namespace => $job };
 
     $memd->set ('map',    $map);                                             # store map into cloud (see $Storable::Deparse)
     $memd->set ('reduce', $reduce);                                          # store reduce into cloud (see $Storable::Deparse)
 
     my $h1_sliced = Hslice ($h1, scalar @{ $self->{_workers} });             # slice the hash into equal parts (as many workers as there are)
-warn "sliced ".Dumper $h1_sliced;
+    $log->debug ("sliced ".Dumper $h1_sliced) if $log->is_debug;
 
     my @rkeys;                                                               # here we collect the intermediate keys, values remain in the cloud
     foreach my $k (keys %$h1_sliced) {                                       # for all slices of the original hash
 	my @chunks = chunk_n_store ($memd, $h1_sliced->{$k}, $job, 1000);    # distribute hash over memcacheds
-warn "master created chunks ".Dumper \@chunks;
+	$log->debug ("master created chunks ".Dumper \@chunks) if $log->is_debug;
 	my ($w) = @{ $self->{_workers} };                                    # take always the first, TODO: random?
 	push @rkeys, @{                                                      # store the returned keys of the ...
 	             $w->map (\@chunks, "slice$k:", $self->{MemCacheds}, $job)  # ... run worker
 	             };
     }
-warn "all keys after mappers ".Dumper \@rkeys;
+    $log->debug ("all keys after mappers ".Dumper \@rkeys) if $log->is_debug;
 
     my $Rs = balance_keys (\@rkeys, $job, scalar @{ $self->{_workers} });    # slice the keys into 'equal' groups
 
@@ -68,9 +72,9 @@ warn "all keys after mappers ".Dumper \@rkeys;
 		       };
     }
 
-warn "trying to reconstruct from ".Dumper \@Rchunks;
+    $log->debug ("trying to reconstruct from ".Dumper \@Rchunks) if $log->is_debug;
     my $h4 = fetch_n_unchunk ($memd, \@Rchunks);                             # collect together all these chunks
-warn "reconstructed result ".Dumper $h4;
+    $log->debug ("reconstructed result ".Dumper $h4) if $log->is_debug;
     return $h4;                                                              # return the result hash
 }
 
@@ -89,6 +93,6 @@ itself.
 
 =cut
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
 1;

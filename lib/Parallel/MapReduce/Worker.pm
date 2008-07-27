@@ -12,6 +12,9 @@ use Storable;
 $Storable::Deparse = 1;
 $Storable::Eval = 1;
 
+use Parallel::MapReduce;
+our $log = Parallel::MapReduce::_log();
+
 =pod
 
 =head1 NAME
@@ -89,16 +92,16 @@ sub map {
 
     my $memd = new Cache::Memcached {servers => $servers, namespace => $job };
 
-warn Dumper \ %Cache::Memcached::Cache;
+#warn Dumper \ %Cache::Memcached::Cache;
     my $map  = $memd->get ('map');
     my $h1   = fetch_n_unchunk ($memd, $chunks);
-warn "mapper got h1 ".Dumper $h1;
+    $log->debug ("generic mapper got h1 ".Dumper $h1) if $log->is_debug;
     my %h3;
     while (my ($k, $v) = each %$h1) {
 	my %h2 = &$map ($k => $v);
 	map { push @{ $h3{$_} }, $h2{$_} } keys %h2;
     }
-warn "mapper h3 ".Dumper \%h3;
+    $log->debug ("generic mapper produced h3 ".Dumper \%h3) if $log->is_debug;
     my @cs = Hstore ($memd, \%h3, $slice, $job);
     return \@cs;
 }
@@ -121,18 +124,17 @@ sub reduce {
     my $memd = new Cache::Memcached {'servers' => $servers, namespace => $job };
 
     my $reduce = $memd->get ('reduce');
-warn "reducer before Hfetch keys ".Dumper $keys;
+    $log->debug ("generic reducer before Hfetch keys ".Dumper $keys) if $log->is_debug;
     my $h3 = Hfetch ($memd, $keys, $job);
-warn "resorted h3 at reducer ".Dumper $h3;
+    $log->debug ("generic resorted h3 at reducer ".Dumper $h3) if $log->is_debug;
     my %h4;
     while (my ($k, $v) = each %$h3) {
 	$h4{$k} = &$reduce ($k => $v);
     }
-warn "h4 ".Dumper \%h4;
+    $log->debug ("generic reducer produced h4 ".Dumper \%h4) if $log->is_debug;
     
     my @chunks = chunk_n_store ($memd, \%h4, $job);
 #warn "reducer chunks ".Dumper \@chunks;
-
     return \@chunks;
 }
 
@@ -153,6 +155,6 @@ itself.
 
 =cut
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 1;

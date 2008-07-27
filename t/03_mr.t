@@ -12,8 +12,9 @@ use_ok 'Parallel::MapReduce::Sequential';
 use_ok 'Parallel::MapReduce::Testing';
 
 use constant SERVERS => ['127.0.0.1:11211'];
-use constant WORKERS => ['127.0.0.1', '127.0.0.1', '127.0.0.1'];
-#use constant WORKERS => ['127.0.0.1', '127.0.0.1'];
+#use constant WORKERS => ['127.0.0.1', '127.0.0.1', '127.0.0.1'];
+use constant WORKERS => ['127.0.0.1', '127.0.0.1'];
+#use constant WORKERS => ['127.0.0.1'];
 #use constant WORKERS => ['192.168.0.12'];
 
 {

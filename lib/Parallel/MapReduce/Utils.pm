@@ -102,15 +102,15 @@ sub Hfetch  {
     my $keys = shift;
     my $jobs  = shift;
 
-warn "Hfetch ".Dumper $keys;
+#warn "Hfetch ".Dumper $keys;
     my $h = $memd->get_multi (@$keys);
-warn "fetched ".Dumper $h;
+#warn "fetched ".Dumper $h;
 
     my %h2;
     map { push @{ $h2{ $_->[0] } }, @{ $h->{ $_->[1] } } }  # aggregating all value lists
     map { $_ =~ /^(slice\d+:)(.+)/; [ $2, $_ ]}             # finding original keys
     keys %$h;
-warn "after aggregation ".Dumper \%h2;
+#warn "after aggregation ".Dumper \%h2;
     return \%h2;
 }
 
@@ -119,7 +119,7 @@ sub fetch_n_consolidate  {
     my $keys = shift;
 
     my $h = $memd->get_multi (@$keys);
-    warn "fetch_n ".Dumper $h;
+#warn "fetch_n ".Dumper $h;
     # resorting of different slices, but same keys
     my $h2;
     foreach my $k (keys %$h) {

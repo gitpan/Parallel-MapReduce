@@ -7,7 +7,8 @@ use base 'Parallel::MapReduce::Worker';
 
 use Data::Dumper;
 use IPC::Run qw(start pump finish timeout);
-use Parallel::MapReduce::Worker;
+
+our $log = Parallel::MapReduce::_log();
 
 =pod
 
@@ -67,11 +68,11 @@ sub new {
 		       out  => '',
 		       err  => '',
 		   }, $class;
-warn "starting up ".$self->{host};
-    $self->{harness} = start [ split /\s+/, "$SSH ".$self->{host}." $PERL -I/home/rho/projects/mapreduce/lib -MParallel::MapReduce::Worker::SSH -e 'Parallel::MapReduce::Worker::SSH::ssh_worker()'" ], 
+    $log->debug ("SSH starting up ".$self->{host});
+    $self->{harness} = start [ split /\s+/, "$SSH ".$self->{host}." $PERL -I/home/rho/projects/mapreduce/lib -MParallel::MapReduce -MParallel::MapReduce::Worker::SSHRemote -e 'Parallel::MapReduce::Worker::SSHRemote::worker()'" ], 
                              \ $self->{in}, \ $self->{out}, \ $self->{err},
                              timeout( 20 ) ;
- warn "started up ".$self->{host};
+    $log->info ("SSH started up at ".$self->{host});
     return $self;
 }
 
@@ -97,11 +98,11 @@ sub map {
     $self->{in} .= "$sl\n";
     $self->{in} .= join (",",  @$ss ) . "\n";
     $self->{in} .= join ("\n", @$cs ) . "\n\n";
-warn "sent chunks: ".Dumper $cs;;
+    $log->debug ("SSH map sent chunks: ".Dumper $cs) if $log->is_debug;
 
     pump $self->{harness} until $self->{out} =~ /\n\n/g;
-warn "ssh worker sent back err".$self->{err};
-warn "ssh worker sent back out".$self->{out};
+    $log->debug ("SSH worker (map) sent back err".$self->{err});
+    $log->debug ("SSH worker (map) sent back out".$self->{out});
 
     return [ split /\n/, $self->{out} ];
 }
@@ -111,78 +112,20 @@ sub reduce {
     my $ks = shift;
     my $ss = shift;
     my $jj = shift;
-warn "master writes to reduce ".Dumper ($ks, $ss, $jj);
 
     $self->{in} = $self->{out} = $self->{err} = '';
     $self->{in} .= "reducer\n";
     $self->{in} .= "$jj\n";
     $self->{in} .= join (",",  @$ss ) . "\n";
     $self->{in} .= join ("\n", @$ks ) . "\n\n";
-
-warn "sent ".scalar @$ks." keys";
+    $log->debug ("SSH reduce sent ".scalar @$ks." keys") if $log->is_debug;
 
     pump $self->{harness} until $self->{out} =~ /\n\n/g;
-warn "ssh worker sent back err".$self->{err};
-warn "ssh worker sent back out".$self->{out};
-
-###    $self->{task} = undef;
+    $log->debug ("SSH worker (reduce) sent back err".$self->{err});
+    $log->debug ("SSH worker (reduce) sent back out".$self->{out});
     return [ split /\n/, $self->{out} ];
 }
 
-sub _pull_string_stdin {
-    my $s = <STDIN>; chomp $s;
-    return $s;
-}
-
-sub _pull_hlist_stdin {
-    my $s = <STDIN>; chomp $s;
-    return [ split /,/, $s ];
-}
-
-sub _pull_vlist_stdin {
-    my $s;
-    my @s;
-    do {
-	$s = <STDIN>; chomp $s;
-	push @s, $s if $s;
-    } while ($s);
-    return \@s;
-}
-
-sub ssh_worker {
-    use IO::Handle;
-    STDOUT->autoflush(1);
-    STDERR->autoflush(1);
-
-    use constant COWS_COME_HOME => 0;
-
-    do {
-	my $mode = _pull_string_stdin();
-	exit if $mode eq 'exit';
-	if ($mode eq "mapper") {
-	    my $job     = _pull_string_stdin();
-	    my $slice   = _pull_string_stdin();
-	    my $servers = _pull_hlist_stdin();
-	    my $chunks  = _pull_vlist_stdin();
-	    warn "gotta $job $slice servers ".scalar @$servers. "chunks: ".scalar @$chunks;
-
-	    my $w  = new Parallel::MapReduce::Worker;
-	    my $cs = $w->map ($chunks, $slice, $servers, $job);
-	    print join ("\n", @$cs) . "\n\n";
-
-	} elsif ($mode eq "reducer") {
-	    my $job     = _pull_string_stdin();
-	    my $servers = _pull_hlist_stdin();
-	    my $keys    = _pull_vlist_stdin();
-	    warn "reducer gotta $job servers ".scalar @$servers. "keys: ".scalar @$keys;
-
-	    my $w  = new Parallel::MapReduce::Worker;
-	    my $cs = $w->reduce ($keys, $servers, $job);
-	    print join ("\n", @$cs) . "\n\n";
-	}
-	sleep 2;
-    } until (COWS_COME_HOME);
-}
 
 =pod
 
@@ -199,23 +142,8 @@ itself.
 
 =cut
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 1;
 
 __END__
-
-sub __ssh_remoted_map_worker {
-    my $self = shift;
-    my ($chunks, $slice, $servers, $job) = @{ $comm };
-    my $cs = $self->SUPER::map_worker ($chunks, $slice, $servers, $job);
-    $comm = $cs;
-}
-
-sub __ssh_remoted_reduce_worker {
-    my $self = shift;
-    my ($keys, $servers, $job) = @{ $comm };
-    my $cs = $self->SUPER::reduce_worker ($keys, $servers, $job);
-    $comm = $cs;
-}
-
