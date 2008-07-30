@@ -16,7 +16,7 @@ use Storable;
 $Storable::Deparse = 1;
 $Storable::Eval    = 1;
 
-our $VERSION  = '0.08';
+our $VERSION  = '0.09';
 
 #-- logging infrastructure
 
@@ -289,7 +289,7 @@ sub mapreduce {
 		# null
 	    }
 	}
-	foreach my $j ( threads->list (threads::joinable) ) {                # see those who are finished
+	foreach my $j ( threads->list ( threads::joinable() ) ) {            # see those who are finished
 #warn "joining one";
 	    push @keys, @{ $j->join() };                                     # harvest
 	    my ($w) = grep { $_->{thread} == $j } @{$self->{_workers}};      # find the corresponding worker

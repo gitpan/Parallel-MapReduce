@@ -1,5 +1,8 @@
 Revision history for Perl extension Parallel::MapReduce.
 
+0.09  Wed Jul 30 06:17:29 CEST 2008
+	- changed: thread::joinable() now explicitly used as sub (made some perls complain about BAREWORD use)
+
 0.08  Sun Jul 27 18:46:05 CEST 2008
 	- changed: debugging output now goes into a Log4Perl object
 	- changed: SSH worker now split into client and server (SSHRemote) 
